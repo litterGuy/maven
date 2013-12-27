@@ -28,8 +28,8 @@ public class DefineSavedRequestAwareAuthenticationSuccessHandler extends SimpleU
        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,  
                Authentication authentication) throws ServletException, IOException {  
            SavedRequest savedRequest = requestCache.getRequest(request, response);  
-           if (savedRequest == null) {  
-               System.out.println("savedRequest is null ");  
+           if (savedRequest == null) { 
+        	   logger.info("savedRequest is null");
                //用户判断是否要使用上次通过session里缓存的回调URL地址  
                int flag = 0;  
                //通过提交登录请求传递需要回调的URL callCustomRediretUrl  
