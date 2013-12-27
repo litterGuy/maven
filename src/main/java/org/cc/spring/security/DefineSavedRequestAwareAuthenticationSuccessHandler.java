@@ -17,7 +17,7 @@ import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.StringUtils;
 
 public class DefineSavedRequestAwareAuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler{  
-    @Value(value = "${local.service.url}")  
+    @Value(value = "/login/login.do")  
     private String LOCAL_SERVER_URL;  
      
     protected final Log logger = LogFactory.getLog(this.getClass());  

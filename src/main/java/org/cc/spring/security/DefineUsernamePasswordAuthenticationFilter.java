@@ -1,8 +1,11 @@
 package org.cc.spring.security;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.cc.entity.UserEntity;
+import org.cc.service.Oauth2Service;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,7 +20,10 @@ public class DefineUsernamePasswordAuthenticationFilter extends UsernamePassword
     public static final String SPRING_SECURITY_FORM_PASSWORD_KEY = "j_password";  
     //需要回调的URL 自定义参数  
     public static final String SPRING_SECURITY_FORM_REDERICT_KEY = "spring-security-redirect";  
-      
+     
+    @Resource
+    private Oauth2Service oauth2Service;
+    
     /**  
      * @deprecated If you want to retain the username, cache it in a customized {@code AuthenticationFailureHandler}  
      */  
@@ -27,7 +33,8 @@ public class DefineUsernamePasswordAuthenticationFilter extends UsernamePassword
     private String usernameParameter = SPRING_SECURITY_FORM_USERNAME_KEY;  
     private String passwordParameter = SPRING_SECURITY_FORM_PASSWORD_KEY;  
     private String redirectParameter = SPRING_SECURITY_FORM_REDERICT_KEY;  
-    private boolean postOnly = true;  
+    @SuppressWarnings("unused")
+	private boolean postOnly = true;  
 
     //~ Constructors ===================================================================================================  
 
@@ -38,12 +45,34 @@ public class DefineUsernamePasswordAuthenticationFilter extends UsernamePassword
     //~ Methods ========================================================================================================  
 
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {  
-        if (postOnly && !request.getMethod().equals("POST")) {  
-            throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());  
-        }  
+    	String code = request.getParameter("code");//返回的code
+        String state = request.getParameter("state");//平台类型
+        String error = request.getParameter("error");//错误码，主要为应用授权时拒绝授权
+//    	if (postOnly && !request.getMethod().equals("POST")) {  
+//            throw new AuthenticationServiceException("Authentication method not supported: " + request.getMethod());  
+//        }
+        UserEntity user = new UserEntity();
+        if((error!=null && error.length()>0)){
+       	 throw new AuthenticationServiceException(null);
+        }
+        if(request.getParameter("code")!=null&&request.getParameter("code").length()>0){  
+       	try {
+       		user = oauth2Service.handlerSort(code, state);
+			} catch (Exception e) {
+				throw new AuthenticationServiceException("授权失败，请刷新页面重新尝试");
+			}
+       	 if(user==null){
+       		 throw new AuthenticationServiceException("授权失败，请刷新页面重新尝试");
+       	 }
+        }
         String username = obtainUsername(request);  
         String password = obtainPassword(request);  
-        String redirectUrl = obtainRedercitUrl(request);  
+        String redirectUrl = obtainRedercitUrl(request); 
+      //此时的登陆为第三方授权登陆
+        if(code!=null && code.length()>0){
+       	 username = user.getLoginName();
+       	 password = user.getPassWord();
+        }
         if (username == null) {  
             username = "";  
         }  

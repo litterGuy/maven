@@ -54,5 +54,21 @@ public class UserDaoImpl implements UserDao {
 	public void update(UserEntity user) {
 		sessionFactory.getCurrentSession().update(user);
 	}
+	/**
+	 * 获取与token关联的表
+	 */
+	@Override
+	@Transactional(readOnly = true, rollbackFor = RuntimeException.class)
+	public UserEntity getByOauthID(Long id) {
+		String sql = "from UserEntity u where u.oauthID = ?";
+		Query query = sessionFactory.getCurrentSession().createQuery(sql);
+		query.setLong(0, id);
+		try {
+			return (UserEntity) query.uniqueResult();
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			return null;
+		}
+	}
 
 }

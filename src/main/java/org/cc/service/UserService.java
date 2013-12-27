@@ -9,4 +9,5 @@ public interface UserService {
 	void save(UserEntity user);
 	UserEntity getByLoginName(String loginName);
 	void update(UserEntity user);
+	UserEntity getByOauthID(Long id);
 }

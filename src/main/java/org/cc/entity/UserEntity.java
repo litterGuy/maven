@@ -25,6 +25,7 @@ public class UserEntity implements Serializable {
 	private byte verify;//邮箱是否验证
 	private String picture;//头像地址
 	private int enable;//是否可用
+	private Long oauthID;//token表主键，oauth添加字段
 	public String getLoginName() {
 		return loginName;
 	}
@@ -90,6 +91,12 @@ public class UserEntity implements Serializable {
 	}
 	public void setEnable(int enable) {
 		this.enable = enable;
+	}
+	public Long getOauthID() {
+		return oauthID;
+	}
+	public void setOauthID(Long oauthID) {
+		this.oauthID = oauthID;
 	}
 	
 }

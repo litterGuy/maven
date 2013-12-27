@@ -7,4 +7,5 @@ public interface UserDao {
 	UserEntity getByEmail(String email);
 	void save(UserEntity user);
 	void update(UserEntity user);
+	UserEntity getByOauthID(Long id);
 }
