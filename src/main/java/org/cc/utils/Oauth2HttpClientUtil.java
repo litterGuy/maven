@@ -1,8 +1,13 @@
 package org.cc.utils;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -96,4 +101,56 @@ public class Oauth2HttpClientUtil {
         }
 		return result;
 	}
+	
+	/**
+	 * 下载图片
+	 * @throws IOException 
+	 * @throws ClientProtocolException 
+	 */
+	public static void getMethodPicture(String url,String filePath,Integer connTimeout,Integer readTimeout) throws ClientProtocolException, IOException{
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+		if(connTimeout!=null){
+			default_connTimeout = connTimeout;
+		}
+		if(readTimeout !=null){
+			default_readTimeout = readTimeout;
+		}
+        try {  
+            HttpGet httpGet = new HttpGet(url);
+            RequestConfig requestConfig = 
+            		RequestConfig.custom().setConnectionRequestTimeout(default_connTimeout)
+            		.setConnectTimeout(default_readTimeout).build();//设置请求和传输超时时间
+            httpGet.setConfig(requestConfig);
+            CloseableHttpResponse response = httpclient.execute(httpGet);  
+            try {  
+                //http请求头状态码
+                int status = response.getStatusLine().getStatusCode();
+                //TODO 不成功报错
+                if(status!= HttpStatus.SC_OK){
+                	
+                }
+                HttpEntity entity = response.getEntity();
+                InputStream input = null; 
+                if (entity != null) {
+                     try {  
+                         input = entity.getContent();  
+                         File file = new File(filePath);  
+                         FileOutputStream output = FileUtils.openOutputStream(file);  
+                         try {  
+                             IOUtils.copy(input, output);  
+                         } finally {  
+                             IOUtils.closeQuietly(output);  
+                         }  
+                     } finally {  
+                         IOUtils.closeQuietly(input);  
+                     }
+                }
+            } finally {  
+                response.close();  
+            }  
+        } finally {  
+            httpclient.close();  
+        }
+	}
+	
 }

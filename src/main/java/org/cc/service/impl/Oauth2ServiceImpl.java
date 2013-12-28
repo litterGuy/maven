@@ -1,12 +1,19 @@
 package org.cc.service.impl;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
+
 import javax.annotation.Resource;
+
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
+import org.apache.struts2.ServletActionContext;
 import org.cc.dao.Oauth2TokenDao;
 import org.cc.entity.Oauth2TokenEntity;
 import org.cc.entity.RoleEntity;
@@ -18,6 +25,8 @@ import org.cc.service.UserRolesService;
 import org.cc.service.UserService;
 import org.cc.utils.Oauth2Constants;
 import org.cc.utils.Oauth2HttpClientUtil;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.security.authentication.encoding.Md5PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +57,7 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 			tokenDao.update(token);
 			user = userService.getByOauthID(token.getId());
 		}else{
+			token = this.downloadPic(token);
 			tokenDao.save(token);
 			//给用户建立一个默认用户名称
 			user = this.getUser(token);
@@ -285,6 +295,37 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 			return user;
 		}
 	
+	public Oauth2TokenEntity downloadPic(Oauth2TokenEntity token) {
+		//从远程下载图片，并替换为本地路径
+		String remoteUrl = token.getPicture();
+		String fileName = new Date().getTime()+".png";
+		//TODO 上传路径暂时从配置文件中读取，有时间把上传路径这部分统一一下
+		org.springframework.core.io.Resource resource = new ClassPathResource("tempFilel.properties");
+		Properties props;
+		String path = "";
+		try {
+			props = PropertiesLoaderUtils.loadProperties(resource);
+			path = props.getProperty("temp.file.physicalPath");
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+		if(!new File(path+"upload").exists()){
+			new File(path+"upload").mkdirs();
+		}
+		String filePath = path+"upload"+File.separator+fileName;
+		try {
+			Oauth2HttpClientUtil.getMethodPicture(remoteUrl, filePath,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT
+					,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+		} catch (ClientProtocolException e) {
+			logger.error(e.getMessage());
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+		String virPath = "upload/"+fileName;
+		token.setPicture(virPath);
+		return token;
+	}	
+		
 	/**
      * 将string转换成json字符串的格式
      */
