@@ -43,13 +43,31 @@
 	 <!-- 认证管理器 -->
 	 <authentication-manager alias="authenticationManager">
 	 	<!-- UserDetailsService实现 主要用于用户的查询 -->
+	 	<!-- security 默认方式 -->
+	 	<!-- 
 	 	<authentication-provider user-service-ref="userDetailService">
 	 		<password-encoder hash="md5">
-              <!-- 用户名做为盐值 -->
               <salt-source user-property="username" />
          	</password-encoder>
 	 	</authentication-provider>
+	 	 -->
+	 	 <!-- 自定义 -->
+	 	 <authentication-provider ref="defineDaoAuthenticationProvider" />
 	 </authentication-manager>
+	 
+	  <beans:bean id="defineDaoAuthenticationProvider" class="org.cc.spring.security.DefineDaoAuthenticationProvider">  
+        <beans:property name="userDetailsService" ref="userDetailService" />  
+        <beans:property name="passwordEncoder" ref="passwordEncoder" />  
+        <beans:property name="saltSource" ref="saltSource" />
+	 </beans:bean>
+	 
+	 <!-- 用户的密码加密或解密 -->    
+ 	<beans:bean id="passwordEncoder"    
+        class="org.springframework.security.authentication.encoding.Md5PasswordEncoder" />
+	<!-- 盐值 -->
+	<beans:bean id="saltSource" class="org.springframework.security.authentication.dao.ReflectionSaltSource">  
+        <beans:property name="userPropertyToUse" value="username" />       
+    </beans:bean> 
 	 
 	<!-- 登陆处理 -->
 	 <beans:bean id="myLoginFilter" class="org.cc.spring.security.DefineUsernamePasswordAuthenticationFilter">  

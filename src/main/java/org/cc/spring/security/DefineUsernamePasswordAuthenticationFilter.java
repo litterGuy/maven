@@ -84,8 +84,10 @@ public class DefineUsernamePasswordAuthenticationFilter extends UsernamePassword
         if(redirectUrl != null && !"".equals(redirectUrl)){  
             request.getSession().setAttribute("callCustomRediretUrl", redirectUrl);  
         }  
-        username = username.trim();  
-        UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(username, password);  
+        username = username.trim();
+//        UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(username, password);
+        //为oauth登录，自定义部分
+        DefineUsernamePasswordAuthenticationToken authRequest = new DefineUsernamePasswordAuthenticationToken(username, password,state);
         // Allow subclasses to set the "details" property  
         setDetails(request, authRequest);  
         return this.getAuthenticationManager().authenticate(authRequest);  
