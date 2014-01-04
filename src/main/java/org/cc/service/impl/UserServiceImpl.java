@@ -52,5 +52,13 @@ public class UserServiceImpl implements UserService {
 	public UserEntity getByOauthID(Long id) {
 		return userDao.getByOauthID(id);
 	}
+	@Override
+	public UserEntity getByEmail(String email) {
+		return userDao.getByEmail(email);
+	}
+	@Override
+	public UserEntity getById(Integer id) {
+		return userDao.getById(id);
+	}
 
 }

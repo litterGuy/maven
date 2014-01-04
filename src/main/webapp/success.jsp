@@ -3,12 +3,7 @@
 <%@ include file="/taglib.jsp"%>
 <html>
 <head>
-<title>
-	<c:choose>
-		<c:when test="${type eq null }">注册成功</c:when>
-		<c:otherwise>激活</c:otherwise>
-	</c:choose>
-</title>
+<title>litterGuy提示页面</title>
 </head>
 <body>
 <%@ include file="top.jsp"%>
@@ -22,12 +17,12 @@
 			</c:if>
 			<c:if test="${type eq 'expires'  }">
 				<h2>激活过期</h2>
-				<p>链接有效期已过，请登录账号重新发送激活邮件！</p>
+				<p>链接有效期已过，请重新发送激活邮件！</p>
 				<p><a class="btn btn-primary btn-large" href="${ctx  }/login.jsp">登录»</a></p>
 			</c:if>
 			<c:if test="${type eq 'used'  }">
 				<h2>链接失效</h2>
-				<p>激活链接仅第一次点击有效，如您帐号未激活、请重新登录发送！</p>
+				<p>激活链接仅第一次点击有效，如您操作未成功、请重新发送邮件！</p>
 				<p><a class="btn btn-primary btn-large" href="${ctx  }/login.jsp">登录»</a></p>
 			</c:if>
 			<c:if test="${type eq 'activated'  }">
@@ -37,7 +32,24 @@
 			</c:if>
 			<c:if test="${type eq 'error'  }">
 				<h2>系统错误</h2>
-				<p>服务器出错了，这可如何是好啊。您还是重新登录帐号再次验证邮箱吧！</p>
+				<p>服务器出错了，这可如何是好啊。您还是重新操作吧！</p>
+				<p><a class="btn btn-primary btn-large" href="${ctx  }/login.jsp">登录»</a></p>
+			</c:if>
+			<c:if test="${type eq 'passwordSuccess'  }">
+				<h2>发送邮件成功</h2>
+				<p>邮件已经发送到您的邮箱，你登录邮箱重置密码</p>
+			</c:if>
+			<c:if test="${type eq 'passwordError'  }">
+				<h2>发送邮件失败</h2>
+				<p>重置密码邮件发送失败，请尝试重新发送</p>
+			</c:if>
+			<c:if test="${type eq 'editError'  }">
+				<h2>密码重置失败，请重新操作</h2>
+				<p>系统繁忙，又跑去玩游戏了、重新来一次吧</p>
+			</c:if>
+			<c:if test="${type eq 'editSuccess'  }">
+				<h2>密码重置成功</h2>
+				<p>密码已经重置成功，登录一下吧</p>
 				<p><a class="btn btn-primary btn-large" href="${ctx  }/login.jsp">登录»</a></p>
 			</c:if>
 		</div>

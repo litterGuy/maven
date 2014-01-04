@@ -123,7 +123,7 @@
 			},
 			messages: {
 	         loginName:{remote: "该用户名已经被使用" },
-	         mail:{remote: "该邮箱已经被使用" }
+	         email:{remote: "该邮箱已经被使用" }
 	    	},
 	    	submitHandler: function(form){
 	    		var btSubmit = document.getElementById("submitBtn");

@@ -24,4 +24,25 @@ public class MailTemplate {
 		template.append("");
 		return template.toString();
 	}
+	/**
+	 * 找回密码页
+	 */
+	public static String sendPasswordTemplete(String activateURL,UserEntity user){
+		StringBuilder template = new StringBuilder();
+		template.append("<div style='margin:10px auto;width:940px;font-size: 14px;line-height: 20px;color: #333;'>");
+		template.append("<div style='display: block;padding-top: 30px;'>");
+		template.append("<div style='padding: 60px;margin-bottom: 30px;font-size: 18px;font-weight: 200;line-height: 30px;color: inherit;background-color: #eeeeee;-webkit-border-radius: 6px;-moz-border-radius: 6px;border-radius: 6px;' >");
+		template.append("<h2>重置密码</h2>");
+		template.append("<p>您申请重置账号密码，如非本人操作，请忽略此邮件。立即重置密码。请点击以下地址:(链接有效期"+SysConfigUtil.getMailParam(SysConfigUtil.MAIL_EXPIRES)+"天)</p>");
+		template.append("<div style='padding: 15px;margin-bottom: 20px;border: 1px solid transparent;border-radius: 4px;color: #3a87ad;background-color: #d9edf7;border-color: #bce8f1;;'>");
+		//点击重置URL
+		template.append("<a href='"+activateURL+"'>"+activateURL+"</a>");
+		template.append("</div>");
+		template.append("<p>如果您并没有进行上述操作，请忽略该邮件。您不需要退订或进行其他进一步的操作。此邮件为系统自动发出的邮件，请勿直接回复。</p>");
+		template.append("</div>");
+		template.append("</div>");
+		template.append("</div>");
+		template.append("");
+		return template.toString();
+	}
 }

@@ -46,6 +46,7 @@ public class LoginAction extends ActionSupport{
 	private static final long serialVersionUID = -819406853760504924L;
 
 	private final static Logger logger = Logger.getLogger(LoginAction.class);
+	private final static String PORT_ADDRESS = "http://localhost:8080";
 	
 	@Resource
 	private UserService userService;
@@ -156,7 +157,7 @@ public class LoginAction extends ActionSupport{
 			shortUrlEntity.setType(SysConstant.SHORT_URL_MAIL);
 			//MongoDB入库
 			mongoDBDao.save(shortUrlEntity);
-			String mailRUL = "http://localhost:8080/maven/user/mail/"+shortUrl;
+			String mailRUL = PORT_ADDRESS+"/maven/user/mail/"+shortUrl;
 			String template = MailTemplate.sendRegisterTemplate(mailRUL, user);
 			MailEntity mail = new MailEntity();
 			mail.setTemplate(template);
@@ -184,6 +185,117 @@ public class LoginAction extends ActionSupport{
 			type = "error";
 		}
 		return "result";
+	}
+	
+	/**
+	 * 验证邮箱是否注册
+	 */
+	@Action(value="existEmail")
+	public void existEmail(){
+		HttpServletResponse response = ServletActionContext.getResponse();
+		HttpServletRequest request = ServletActionContext.getRequest();
+		response.setContentType("text/plain");// 设置输出为文字流
+		response.setCharacterEncoding("UTF-8");
+		String email = request.getParameter("email");
+		boolean flag = true;
+		if(StringUtils.isNotBlank(email)){
+			if(userService.validEmail(email)){
+				flag = false;
+			}
+		}
+		try {
+			response.getWriter().print(flag);
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+	}
+	
+	/**
+	 * 发送邮件，重置密码
+	 */
+	@Action(value="emailPassword",results={
+			@Result(name = "success", location = "/success.jsp",type="redirect")
+	})
+	public String emailPassword(){
+		HttpServletRequest request = ServletActionContext.getRequest();
+		String email = request.getParameter("email");
+		if(!StringUtils.isNotBlank(email)){
+			type = "passwordError";
+		}
+		Date nowDate = new Date();
+		try {
+			//url编码存库
+			String originUrl = "/login/updatePassword.do?email="+email+"&token="+nowDate.getTime();
+			String shortUrl = ShortURLUtil.shortUrl(originUrl)[0];
+			ShortURLEntity shortUrlEntity = new ShortURLEntity();
+			shortUrlEntity.setOriginURL(originUrl);
+			shortUrlEntity.setShortURL(shortUrl);
+			shortUrlEntity.setCreateTime(nowDate);
+			shortUrlEntity.setType(SysConstant.SHORT_URL_PASSWORD_MAIL);
+			//MongoDB入库
+			mongoDBDao.save(shortUrlEntity);
+			String mailRUL = PORT_ADDRESS+"/maven/user/update/"+shortUrl;
+			String template = MailTemplate.sendPasswordTemplete(mailRUL, user);
+			MailEntity mail = new MailEntity();
+			mail.setTemplate(template);
+			mail.setReceivers(new String[]{email});
+			mail.setSubject("Email重置密码");
+			mail.setSender(SysConfigUtil.getMailParam(SysConfigUtil.MAIL_SENDER));
+			mailUtil.sendRegisterMail(mail);
+			
+			type = "passwordSuccess";
+		} catch (MessagingException e) {
+			logger.error(e.getMessage());
+		}
+		return "success";
+	}
+	
+	/**
+	 * 通过邮件修改密码
+	 */
+	@Action(value="updatePassword",results={
+			@Result(name = "success", location = "/updatePassword.jsp"),
+			@Result(name = "error", location = "/success.jsp")
+	})
+	public String updatePassword(){
+		HttpServletRequest request = ServletActionContext.getRequest();
+		String email = request.getParameter("email");
+		if(StringUtils.isNotBlank(email)){
+			type = "updateSuccess";
+			user = userService.getByEmail(email);
+			if(user!=null){
+				return "success";
+			}
+		}
+		type = "updateError";
+		return "error";
+	}
+	
+	/**
+	 * 保存修改的密码
+	 */
+	@Action(value="editPassword",results={
+			@Result(name="success",location="/success.jsp",type="redirect")
+	})
+	public String editPassword(){
+		HttpServletRequest request = ServletActionContext.getRequest();
+		String userID = request.getParameter("userID");
+		String password = request.getParameter("password");
+		if(StringUtils.isNotBlank(userID)&&StringUtils.isNotBlank(password)){
+			user = userService.getById(Integer.parseInt(userID));
+			if(user!=null){
+				//用用户名做盐值加密
+				Md5PasswordEncoder md5 = new Md5PasswordEncoder();
+				user.setPassWord(md5.encodePassword(password, user.getLoginName()));
+				userService.update(user);
+				type = "editSuccess";
+			}else{
+				type = "editError";
+			}
+		}else{
+			type = "editError";
+		}
+		return "success";
 	}
 	
 	public String getLoginStatus() {

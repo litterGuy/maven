@@ -11,6 +11,11 @@
         <from>/user/mail/([0-9a-zA-Z]+)$</from>
         <to>/shortURL/redirect.do?param=$1</to>
     </rule>
+    <rule>
+        <note>用户邮箱重置密码</note>
+        <from>/user/update/([0-9a-zA-Z]+)$</from>
+        <to>/shortURL/redirect.do?param=$1</to>
+    </rule>
 	<!-- 
     <rule>
         <note>

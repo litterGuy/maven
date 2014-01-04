@@ -55,7 +55,10 @@
 						<input type="checkbox" contenteditable="true">下次自动登录
 					</label>
               </section>
-          <section class="span1"><input type="submit" value=" 登录 " class="btn btn-primary"></section>
+          	  <section class="span1"><input type="submit" value=" 登录 " class="btn btn-primary"></section>
+            </section>
+            <section>
+            	<a href="${ctx  }/forgotPassword.jsp">忘记密码</a>
             </section>
           </section>
           <section class="span5 right">

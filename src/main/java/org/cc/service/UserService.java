@@ -10,4 +10,6 @@ public interface UserService {
 	UserEntity getByLoginName(String loginName);
 	void update(UserEntity user);
 	UserEntity getByOauthID(Long id);
+	UserEntity getByEmail(String email);
+	UserEntity getById(Integer id);
 }

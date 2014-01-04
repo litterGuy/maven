@@ -8,4 +8,5 @@ public interface UserDao {
 	void save(UserEntity user);
 	void update(UserEntity user);
 	UserEntity getByOauthID(Long id);
+	UserEntity getById(Integer id);
 }

@@ -71,4 +71,10 @@ public class UserDaoImpl implements UserDao {
 		}
 	}
 
+	@Override
+	@Transactional(readOnly = true, rollbackFor = RuntimeException.class)
+	public UserEntity getById(Integer id) {
+		return (UserEntity) sessionFactory.getCurrentSession().get(UserEntity.class, id);
+	}
+
 }
