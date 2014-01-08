@@ -13,7 +13,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
-import org.apache.struts2.ServletActionContext;
 import org.cc.dao.Oauth2TokenDao;
 import org.cc.entity.Oauth2TokenEntity;
 import org.cc.entity.RoleEntity;
