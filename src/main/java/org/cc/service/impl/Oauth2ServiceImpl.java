@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import javax.annotation.Resource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.message.BasicNameValuePair;
@@ -24,6 +25,7 @@ import org.cc.service.UserRolesService;
 import org.cc.service.UserService;
 import org.cc.utils.Oauth2Constants;
 import org.cc.utils.Oauth2HttpClientUtil;
+import org.cc.utils.OauthUtil;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.security.authentication.encoding.Md5PasswordEncoder;
@@ -71,53 +73,36 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 
 	@Override
 	public UserEntity handlerSort(String code, String type) throws Exception {
-		List<NameValuePair> param = new ArrayList<NameValuePair>();
-        param.add(new BasicNameValuePair("grant_type",Oauth2Constants.GRANT_TYPE));
-   	 	param.add(new BasicNameValuePair("code",code));
-        param.add(new BasicNameValuePair("redirect_uri",Oauth2Constants.REDIRECT_URI));  
-        String url = "";
-        String responseJson="";
-        if(type.equals(Oauth2Constants.OAUTH_TYPE_DOUBAN)){
-        	param.add(new BasicNameValuePair("client_id", Oauth2Constants.CLIENT_ID));  
-			param.add(new BasicNameValuePair("client_secret",Oauth2Constants.CLIENT_SECRET));  
-			url += Oauth2Constants.OAUTH_TOKEN_DOUBAN;
-			responseJson = Oauth2HttpClientUtil.postMethod(url, param
-					,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
-       	 
-        }else if(type.equals(Oauth2Constants.OAUTH_TYPE_QQ)){
-       	 	param.add(new BasicNameValuePair("client_id", Oauth2Constants.QQ_CLIENT_ID));  
-            param.add(new BasicNameValuePair("client_secret",Oauth2Constants.QQ_CLIENT_SECRET));  
-       	 	url += Oauth2Constants.OAUTH_TOKEN_QQ;
-       	 	responseJson = Oauth2HttpClientUtil.postMethod(url, param
-       	 			,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
-       	 	responseJson = this.formatJson(responseJson);
-       	 	
-        }else if(type.equals(Oauth2Constants.OAUTH_TYPE_WEIBO)){
-        	param.add(new BasicNameValuePair("client_id", Oauth2Constants.WEIBO_CLIENT_ID));  
-			param.add(new BasicNameValuePair("client_secret",Oauth2Constants.WEIBO_CLIENT_SECRET));
-			url += Oauth2Constants.OAUTH_TOKEN_WEIBO;
-			responseJson = Oauth2HttpClientUtil.postMethod(url, param
-					,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
-        }else if(type.equals(Oauth2Constants.OAUTH_TYPE_BAIDU)){
-        	param.add(new BasicNameValuePair("client_id", Oauth2Constants.BAIDU_CLIENT_ID));  
-			param.add(new BasicNameValuePair("client_secret",Oauth2Constants.BAIDU_CLIENT_SECRET));
-			url += Oauth2Constants.OAUTH_TOKEN_BAIDU;
-			responseJson = Oauth2HttpClientUtil.postMethod(url, param
-					,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
-        }
-        //发送get、post时发生错误抛出异常
-        if(responseJson==null || responseJson.length()<=0){
-        	logger.error("result json type is error");
-        	throw new Exception("授权登陆失败，请刷新页面重试尝试");
-        }
-        Oauth2TokenEntity token = this.getOauth2Token(responseJson,type);
-        //oauth有误返回null值 TODO 这部分为空时有误
-        if(token == null){
-        	logger.error("the token is null that can`t get");
+		if(StringUtils.isNotBlank(type) && StringUtils.isNotBlank(code) ){
+			List<NameValuePair> param = new ArrayList<NameValuePair>();
+	        param.add(new BasicNameValuePair("grant_type",OauthUtil.getSimpleValue(Oauth2Constants.GRANT_TYPE)));
+	   	 	param.add(new BasicNameValuePair("code",code));
+	        param.add(new BasicNameValuePair("redirect_uri",OauthUtil.getSimpleValue(Oauth2Constants.REDIRECT_URI)));
+	        param.add(new BasicNameValuePair("client_id", OauthUtil.getValue(Oauth2Constants.OAUTH_APIKEY, type)));
+	        param.add(new BasicNameValuePair("client_secret",OauthUtil.getValue(Oauth2Constants.OAUTH_SECRETKEY, type)));
+	        String url = OauthUtil.getValue(Oauth2Constants.OAUTH_TOKEN, type);
+	        String responseJson = Oauth2HttpClientUtil.postMethod(url, param
+					,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+					,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
+	        if(type.equals(Oauth2Constants.OAUTH_TYPE_QQ)){
+	        	responseJson = this.formatJson(responseJson);
+	        }
+	        //发送get、post时发生错误抛出异常
+	        if(responseJson==null || responseJson.length()<=0){
+	        	logger.error("result json type is error");
+	        	throw new Exception("授权登陆失败，请刷新页面重试尝试");
+	        }
+	        Oauth2TokenEntity token = this.getOauth2Token(responseJson,type);
+	        //oauth有误返回null值 TODO 这部分为空时有误
+	        if(token == null){
+	        	logger.error("the token is null that can`t get");
+	        	return null;
+	        }
+	        //获取的信息令牌保存
+	        return this.save(token);
+        }else{
         	return null;
         }
-        //获取的信息令牌保存
-        return this.save(token);
 	}
 	
 	/**
@@ -190,9 +175,10 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 				token.setAccess_date(new Date());
 				token.setType(Oauth2Constants.OAUTH_TYPE_DOUBAN);
 				//获取个人的详细信息
-				String url = Oauth2Constants.OAUTH_USERS_DOUBAN+token.getUser_id();
+				String url = OauthUtil.getValue(Oauth2Constants.OAUTH_USER, Oauth2Constants.OAUTH_TYPE_DOUBAN)+token.getUser_id();
 				String detail = Oauth2HttpClientUtil.getMethod(url
-						,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
 				
 				JSONObject detailJson = JSON.parseObject(detail);
 				token.setPicture(detailJson.getString("icon"));
@@ -213,18 +199,21 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 				user.setAccess_date(new Date());
 				user.setType(Oauth2Constants.OAUTH_TYPE_QQ);
 				//获取openid
-				String url = Oauth2Constants.OAUTH_OPENID_QQ+"?access_token="+user.getAccess_token();
+				String url = OauthUtil.getSimpleValue(Oauth2Constants.OAUTH_OPENID)+"?access_token="+user.getAccess_token();
 				String openidStr = Oauth2HttpClientUtil.getMethod(url
-						,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
 				openidStr = openidStr.substring(openidStr.indexOf("{"),openidStr.indexOf("}")+1);
 				JSONObject openidJson = JSON.parseObject(openidStr);
 				user.setUser_id(openidJson.getString("openid"));
 				//获取个人详细信息
-				String nextUrl = Oauth2Constants.OAUTH_USERS_QQ;
+				String nextUrl = OauthUtil.getValue(Oauth2Constants.OAUTH_USER, Oauth2Constants.OAUTH_TYPE_QQ);
 				nextUrl +="?access_token="+user.getAccess_token()+"&oauth_consumer_key="+
-						Oauth2Constants.QQ_CLIENT_ID+"&openid="+user.getUser_id();
+						OauthUtil.getValue(Oauth2Constants.OAUTH_SECRETKEY, Oauth2Constants.OAUTH_TYPE_QQ)
+						+"&openid="+user.getUser_id();
 				String detail = Oauth2HttpClientUtil.getMethod(nextUrl
-						,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
 				
 				JSONObject detailJson = JSON.parseObject(detail);
 				user.setUser_name(detailJson.getString("nickname"));
@@ -246,10 +235,12 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 				user.setType(Oauth2Constants.OAUTH_TYPE_WEIBO);
 				
 				//获取用户详细信息
-				String nextUrl = Oauth2Constants.OAUTH_USERS_WEIBO+"?access_token="+
+				String nextUrl =OauthUtil.getValue(Oauth2Constants.OAUTH_USER, Oauth2Constants.OAUTH_TYPE_WEIBO)
+						+"?access_token="+
 						user.getAccess_token()+"&uid="+user.getUser_id();
 				String detail = Oauth2HttpClientUtil.getMethod(nextUrl
-						,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
 				
 				JSONObject detailJson = JSON.parseObject(detail);
 				user.setUser_name(detailJson.getString("name"));
@@ -279,9 +270,11 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 				user.setAccess_date(new Date());
 				user.setType(Oauth2Constants.OAUTH_TYPE_BAIDU);
 				//获取用户详细信息的部分
-				String nextUrl = Oauth2Constants.OAUTH_USERS_BAIDU+"?access_token="+user.getAccess_token();
+				String nextUrl =OauthUtil.getValue(Oauth2Constants.OAUTH_USER, Oauth2Constants.OAUTH_TYPE_BAIDU)
+						+"?access_token="+user.getAccess_token();
 				String detail = Oauth2HttpClientUtil.getMethod(nextUrl
-						,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
 				
 				JSONObject detailJson = JSON.parseObject(detail);
 				user.setUser_name(detailJson.getString("uname"));
@@ -313,8 +306,9 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 		}
 		String filePath = path+"upload"+File.separator+fileName;
 		try {
-			Oauth2HttpClientUtil.getMethodPicture(remoteUrl, filePath,Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT
-					,Oauth2Constants.URL_CONNECTION_READ_TIMEOUT);
+			Oauth2HttpClientUtil.getMethodPicture(remoteUrl, filePath
+					,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
+					,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_READ_TIMEOUT)));
 		} catch (ClientProtocolException e) {
 			logger.error(e.getMessage());
 		} catch (IOException e) {
