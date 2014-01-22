@@ -209,7 +209,7 @@ public class Oauth2ServiceImpl implements Oauth2Service {
 				//获取个人详细信息
 				String nextUrl = OauthUtil.getValue(Oauth2Constants.OAUTH_USER, Oauth2Constants.OAUTH_TYPE_QQ);
 				nextUrl +="?access_token="+user.getAccess_token()+"&oauth_consumer_key="+
-						OauthUtil.getValue(Oauth2Constants.OAUTH_SECRETKEY, Oauth2Constants.OAUTH_TYPE_QQ)
+						OauthUtil.getValue(Oauth2Constants.OAUTH_APIKEY, Oauth2Constants.OAUTH_TYPE_QQ)
 						+"&openid="+user.getUser_id();
 				String detail = Oauth2HttpClientUtil.getMethod(nextUrl
 						,Integer.parseInt(OauthUtil.getSimpleValue(Oauth2Constants.URL_CONNECTION_CONN_TIMEOUT))
